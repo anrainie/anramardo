@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Anrajs Markdown Editor</title>
+    <script src="src/anramardo.js"></script>
+    <script>
+        window.onload=function(){
+            editor.onkeydown=function(){
+                var html=anramardo.toHTML(editor.value);
+                part.innerHTML=html;
+            }
+
+        };
+    </script>
+    <style>
+        body{
+            position:absolute;
+            width:100%;
+            height:100%;
+            margin:0px;
+        }
+
+        .part{
+            position:relative;
+            width:49%;
+            height:99%;
+            margin:0px;
+            border:1px solid;
+        }
+        #editor{
+            float:left;
+        }
+        #preview{
+            float:right;
+        }
+    </style>
+</head>
+<body>
+    <textarea class="part" id="editor"></textarea>
+    <div  class="part" id="preview"></div>
+</body>
+</html>
