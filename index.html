@@ -3,50 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <title>Anrajs Markdown Editor</title>
+    <!--<script src="src/mardo.js"></script>-->
     <script src="src/anramardo.js"></script>
     <script>
-        window.onload=function(){
-            editor.onkeyup=function(){
-                let html=anramardo.toHTML(editor.value);
-//                console.log(html)
-                preview.innerHTML=html;
+        window.onload = function () {
+//            editor.onkeyup = function () {
+//                preview.innerHTML = '';
+//
+//                let list = mardo.toHTML(editor.value);
+//                for (let i = 0, len = list.length; i < len; i++) {
+//                    preview.appendChild(list[i]);
+//                }
+//            }
+            editor.onkeyup = function () {
+                let list = mardo.toHTML(editor.value);
+                let html = '';
+                for (let i = 0, len = list.length; i < len; i++) {
+                    html += list[i];
+                }
+                console.log(html);
+                preview.innerHTML = html;
             }
-
         };
     </script>
     <style>
-        body{
-            position:absolute;
-            width:100%;
-            height:100%;
-            margin:0px;
+        body {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            margin: 0px;
         }
 
-        p,h1,h2,h3,h4,h5,h6,pre{
-            margin:0px;
+        p, h1, h2, h3, h4, h5, h6 {
+            margin: 0px;
         }
 
-        .part{
-            position:relative;
-            width:49%;
-            height:99%;
-            margin:0px;
-            border:1px solid;
+        blockquote{
+            padding: 20px;
+            background-color: whitesmoke;
+            border-left: 6px solid #b4b4b4;
+            word-break: break-word;
+            font-size: 16px;
+            font-weight: normal;
+            line-height: 30px;
+            margin: 0 0 20px 25px;
         }
-        #editor{
-            float:left;
+
+        .part {
+            position: relative;
+            width: 49%;
+            height: 99%;
+            margin: 0px;
+            border: 1px solid;
         }
-        #preview{
-            float:right;
+
+        #editor {
+            float: left;
         }
-        pre{
+
+        #preview {
+            float: right;
+        }
+
+        pre {
+            margin-left: 30px;
+            margin-top: 10px;
+            padding:10px;
+            border: 1px solid #957bC3;
             background: #f6f6f6;
             color: #657b83;
         }
     </style>
 </head>
 <body>
-    <textarea class="part" id="editor"></textarea>
-    <div  class="part" id="preview"></div>
+<textarea class="part" id="editor"></textarea>
+<div class="part" id="preview"></div>
 </body>
 </html>

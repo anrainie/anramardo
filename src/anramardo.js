@@ -1,33 +1,28 @@
 /**
  * Created by anrainie on 2017/9/11.
  */
-anramardo = {
+mardo = {
     toHTML: function (v) {
         let rows = v.split('\n');
 
-        let htmlReader = new anramardo.HtmlReader();
+        let htmlReader = new mardo.HtmlReader();
         return htmlReader.read(rows);
     }
 };
 
 
-anramardo.HtmlReader = function () {
+mardo.HtmlReader = function () {
     let status = 0;
 
     let read = function (rows) {
         let para;
-        let r = '';
+        rows.push('');
         for (let i = 0, len = rows.length; i < len; i++) {
             if (para == null)
-                para = new anramardo.Paragraph();
+                para = new mardo.Paragraph();
             para = para.next(rows[i]);
-            if (para.isEnd) {
-                r += para.get();
-                para = null;
-            }
-
         }
-        return r;
+        return para == null ? '' : para.get();
     };
 
     return {
@@ -36,49 +31,56 @@ anramardo.HtmlReader = function () {
     };
 };
 
-anramardo.__get = function () {
+mardo.__get = function () {
     if (this.prev == null)return this.content;
     return this.prev.get() + '' + this.content;
-}
+};
 /**
  * 开始段落，需要分析整个根的类型
- * @returns {anramardo.Paragraph}
+ * @returns {mardo.Paragraph}
  * @constructor
  */
-anramardo.Paragraph = function () {
+mardo.Paragraph = function () {
     let _self = this;
     this.content = '';
-    this.get = anramardo.__get;
+    this.children = [];
+    this.get = mardo.__get;
     this.next = function (row) {
         //检查是否为结束段落
+        let parent = _self.getParent();
         let answer;
-        if (_self.checkEnd)
-            answer = _self.checkEnd(row);
-
-        let rr = _self.handler?_self.handler:Handlers[row.charAt(0)];
+        if (parent != null) {
+            answer = parent.checkEnd(row);
+        }
+        if (answer && answer.nextHandler && !answer.isEnd) {
+            rr = answer.nextHandler;
+        } else
+            rr = Handlers[row.charAt(0)];
         if (rr == null)
             rr = Handlers.NORMAL;
         let result = rr(row);
+        _self.content = result.content;
 
-        if (result.checkEnd||(answer && !answer.end)) {
-            _self.content = result.content;
+        let next = new mardo.Paragraph();
+        next.prev = _self;
 
-            let next = new anramardo.Paragraph();
-            next.prev = _self;
-            next.checkEnd = result.checkEnd;
-            next.handler=result.nextHandler;
-            console.log(_self);
-            return next;
-        } else {
-            if (answer && answer.finish)
-                _self.content = answer.finish(result.content);
-            else
-                _self.content = result.content;
-
-            console.log(_self.content)
-            _self.isEnd = true;
-            return _self;
+        if (answer && answer.isEnd) {
+            if (answer != null)
+                _self.content = answer.finish(_self.content);
+            parent.checkEnd = null;
+        } else if (result.checkEnd) {
+            _self.checkEnd = result.checkEnd;
         }
+        return next;
+    };
+    this.getParent = function () {
+        let n = _self;
+        while (n.prev != null) {
+            n = n.prev;
+            if (n.checkEnd != null)
+                return n;
+        }
+        return null;
     };
     return this;
 };
@@ -88,7 +90,7 @@ let Handlers = {
         let count = 0;
         while (s.charAt(count++) == '#' && count < 6) {
         }
-        let h = 'h' + (count-1);
+        let h = 'h' + (count - 1);
         return {
             content: '<' + h + '>' + s.substr(count - 1) + '</' + h + '>',
             checked: true,
@@ -120,26 +122,89 @@ let Handlers = {
                 let n = s.charAt(count + 1);
                 return {
                     content: '<pre><code>' + s.substr(count),
-                    nextHandler(s){
-                        return s+'\n';
-                    },
                     checkEnd: function (s) {
                         let count = 0;
                         while (s.charAt(count++) == ' ') {
                         }
                         if (count < 4)
                             return {
-                                end: true,
+                                isEnd: true,
                                 finish(s){
-                                    '</code></pre>' + s
+                                    return '</code></pre>' + s;
                                 }
-                            }
+                            };
+                        else
+                            return {
+                                isEnd: false,
+                                nextHandler(s){
+                                    return {content: '\n' + s.substr(count - 1)};
+                                },
+                            };
 
                     }
                 }
             }
         }
+
+        let h = Handlers[s.charAt(count)];
+        return h ? h(s.substr(count - 1)) : Handlers.NORMAL(s);
+    },
+    '`'(s){
+        let count = 0;
+        while (s.charAt(count++) == '`') {
+            if (count > 2) {
+                let n = s.charAt(count + 1);
+                return {
+                    content: '<pre><code>',
+                    params: s.substr(count),
+                    checkEnd: function (s) {
+                        let count = 0;
+                        while (s.charAt(count++) == '`') {
+                        }
+                        if (count > 3)
+                            return {
+                                isEnd: true,
+                                finish(s){
+                                    return '</code></pre>';
+                                }
+                            };
+                        else
+                            return {
+                                isEnd: false,
+                                nextHandler(s){
+                                    return {content: s + '\n'};
+                                },
+                            };
+
+                    }
+                }
+            }
+        }
+
         return Handlers.NORMAL(s);
+    },
+    '>'(s){
+
+        return {
+            content: '<blockquote>'+s.substr(1),
+            checkEnd(s){
+                if (s == '>') {
+                    return {
+                        isEnd: false,
+                    }
+                }
+                if(s==''){
+
+                    return {
+                        isEnd:true,
+                        finish(){
+                            return '</blockquote>'
+                        }
+                    }
+                }
+            }
+
+        }
     },
     NORMAL(r){
         return {
